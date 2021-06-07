@@ -6,6 +6,22 @@ import BlockChain
 from urllib.parse import urlparse
 from uuid import uuid4
 
+#serializes the blockchain for jsonify since we cannot necessairly serialize off the bat "blockchain.chain"
+def ser(blockchain):
+
+	blocklist = []
+
+	first = True
+	
+	for block in blockchain:
+		response = {'index': block.index,'proof': block.proof_no,'previous_hash': block.prev_hash,}
+		if first == True:
+			first = False
+			continue
+		else:
+			blocklist.append(response)
+	return blocklist
+	    
 app = Flask(__name__)
 
 node_identifier = str(uuid4()).replace('-','')
@@ -16,7 +32,6 @@ blockchain = BlockChain.BlockChain()
 #Mining Sequences
 @app.route('/mine', methods=['GET'])
 def mine():
-	print(blockchain.chain)
 	last_block = blockchain.latest_block
 	last_proof_no = last_block.proof_no
 	proof_no = blockchain.proof_of_work(last_proof_no)
@@ -35,10 +50,10 @@ def mine():
 	#create a message response to send back to the user
 	response = {
    	    'message': "New Block Forged",
-        'index': block['index'],
-        'data': block['data'],
-        'proof': block['proof_no'],
-        'previous_hash': block['prev_hash'],
+        'index': block.index,
+        'data': block.data,
+        'proof': block.proof_no,
+        'previous_hash': block.prev_hash,
     }
 	return jsonify(response), 200
 
@@ -58,7 +73,8 @@ def new_data():
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
-	response = { 'chain': blockchain.chain, 'length': len(blockchain.chain),}
+
+	response = { 'chain': ser(blockchain.chain), 'length': len(ser(blockchain.chain)),}
 	return jsonify(response), 200
 
 
@@ -72,7 +88,7 @@ def register_nodes():
 		return "Error: Please supply a valid list of nodes", 400
 
 	for node in nodes:
-		blockchain.register_node(node)
+		blockchain.create_node(node)
 
 	response = { 'message': 'New nodes have been added', 'total_nodes' : list(blockchain.nodes),}
 
@@ -81,17 +97,17 @@ def register_nodes():
 #App portion to resolve any conflicts
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
-    replaced = blockchain.resolve_conflicts()
+    replaced = blockchain.resolve_conflict()
 
     if replaced:
         response = {
             'message': 'Our chain was replaced',
-            'new_chain': blockchain.chain
+            'new_chain': ser(blockchain.chain)
         }
     else:
         response = {
             'message': 'Our chain is authoritative',
-            'chain': blockchain.chain
+            'chain': ser(blockchain.chain)
         }
 
     return jsonify(response), 200
@@ -105,3 +121,4 @@ if __name__ == '__main__':
     port = args.port
 
     app.run(host='0.0.0.0', port=port)
+

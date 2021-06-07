@@ -1,6 +1,10 @@
 import hashlib
 import time
+import requests
+
+
 from flask import Flask, jsonify, request
+from urllib.parse import urlparse
 
 ##Begininng of Block class
 class Block:
@@ -45,25 +49,36 @@ class BlockChain:
 
 	##checks validity of the chain to prevent tampering
 	@staticmethod
-	def check_validity(block, prev_block):
-		if prev_block.index + 1 != block.index:
-			return False
+	def check_validity(self, chain):
 
-		elif prev_block.calc_hash != block.prev_hash:
-			return False
+		prev_block = chain[0]
+		current_index = 1
 
-		elif  not BlockChain.verifying_proof(block.proof_no, prev_block.proof_no):
-			return False
+		while current_index < len(chain):
 
-		elif block.timestamp <= prev_block.timestamp:
-			return False
+			block = chain[current_index]
+
+			if prev_block.index + 1 != block.index:
+				return False
+
+			elif prev_block.calc_hash != block.prev_hash:
+				return False
+
+			elif  not BlockChain.verifying_proof(block.proof_no, prev_block.proof_no):
+				return False
+
+			elif block.timestamp <= prev_block.timestamp:
+				return False
+
+			last_block = block
+			current_index += 1
 
 		return True
 
 	#Creates the data for the Transaction
 	def new_data(self, sender, recipient, quantity):
 		self.current_data.append({'sender': sender, 'recipient' : recipient, 'quantity' : quantity})
-		return True
+		return self.latest_block.index + 1
 
 	# Algorithm which is the goal to find a number p' such that hash(pp') contains leading 4 zeros
 	# Where p is the previous proof, and p' is the new proof.
@@ -100,7 +115,8 @@ class BlockChain:
 		return vars(block)
 
 	def create_node(self, address):
-		self.nodes.add(address)
+		parsed_url = urlparse(address)
+		self.nodes.add(parsed_url.netloc)
 		return True
 
 	#Static Method to return the Block Object
@@ -119,13 +135,13 @@ class BlockChain:
 
 		#grab and verify the chain from all nodes in the network
 		for node in neighbors:
-			response = request.get(f'http://{node}/chain')
+			response = requests.get(f'http://{node}/chain')
 
 			if response.status_code == 200:
 				length = response.json()['length']
 				chain = response.json()['chain']
 
-				if length > max and self.check_validity(chain):
+				if length > max and self.check_validity(self, chain):
 					max_length = length
 					new_chain = chain
 
