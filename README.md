@@ -1,4 +1,7 @@
-# BlockChain
-Writing a BlockChain for a potential future cryptocurrency.
+## BlockChain
 
-Script is runnable and free of errors but has not been yet tested.
+#Instructions
+
+  -Dependencies (Flask, hashlib, time, request, jsonify, urllib.parse, uuid, pipenv)
+  
+  
