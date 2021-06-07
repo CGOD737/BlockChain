@@ -11,7 +11,7 @@
   * Using Postman, copy and paste the url into the top box
   * Add the following commands to the end of the url to test
       *   /mine : mines one block of the chain [GET] 
-      *   /new/transaction : creates a new transaction, requires the format of {"sender" : "sender_address , "recipient" : "recipient_address", "quantity": number of blocks } [POST]
-      *   /nodes/register :
+      *   /new/transaction : requires the format of {"sender" : "sender_address , "recipient" : "recipient_address", "quantity": number of blocks } [POST]
+      *   /nodes/register : requires the format of { node: "address } [POST]
   
   
